@@ -7,7 +7,7 @@ class ImageGalleryItem extends Component {
     modalShown: false,
   };
 
-  handleModal = () => {
+  handleOnModalClick = () => {
     console.log('handleModal called');
     this.setState(prevState => ({ modalShown: !prevState.modalShown }));
   };
@@ -21,10 +21,10 @@ class ImageGalleryItem extends Component {
           src={item.webformatURL}
           alt={item.tags}
           className={css.image}
-          onClick={this.handleModal}
+          onClick={this.handleOnModalClick}
         />
         {this.state.modalShown && (
-          <Modal item={item} onClose={this.handleModal} />
+          <Modal item={item} onClose={this.handleOnModalClick} />
         )}
       </li>
     );

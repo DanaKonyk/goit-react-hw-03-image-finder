@@ -6,28 +6,28 @@ import Searchbar from './Searchbar/Searchbar';
 import Button from './Button/Button';
 import Loader from './Loader/Loader';
 
-let page = 0;
-
 export class App extends Component {
   state = {
     searchData: '',
     imagesList: [],
     totalHits: 0,
     loading: false,
+    page: 1,
   };
 
   handleSubmit = async searchData => {
-    page = 1;
     try {
-      const { totalHits, hits } = await fetchImages(searchData, page);
+      const { totalHits, hits } = await fetchImages(searchData, 1);
       console.log(hits);
       if (hits.length < 1) {
         alert('No Images found');
+        return;
       } else {
         this.setState({
           imagesList: hits,
           searchData,
           totalHits,
+          page: 1,
         });
       }
     } catch (error) {
@@ -38,10 +38,14 @@ export class App extends Component {
   handleNextPage = async () => {
     try {
       this.setState({ loading: true });
-      const { hits } = await fetchImages(this.state.searchData, (page += 1));
+      const { hits } = await fetchImages(
+        this.state.searchData,
+        this.state.page + 1
+      );
       this.setState(prevState => ({
         imagesList: [...prevState.imagesList, ...hits],
         loading: false,
+        page: prevState.page + 1,
       }));
     } catch (error) {
       console.log(error.message);
@@ -53,7 +57,9 @@ export class App extends Component {
     return (
       <div className={css.app}>
         <Searchbar onSubmit={this.handleSubmit} />
+
         <ImageGallery items={imagesList} />
+
         {loading && <Loader />}
         {totalHits > 12 && totalHits > imagesList.length && (
           <Button onClick={this.handleNextPage} />
