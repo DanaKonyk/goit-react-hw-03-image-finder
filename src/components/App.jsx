@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import css from './App.module.css';
-import { fetchImages } from './Helpers/images-api';
+import { fetchImages } from '../Helpers/images-api';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Searchbar from './Searchbar/Searchbar';
 import Button from './Button/Button';
@@ -15,41 +15,48 @@ export class App extends Component {
     page: 1,
   };
 
-  handleSubmit = async searchData => {
-    try {
-      const { totalHits, hits } = await fetchImages(searchData, 1);
-      console.log(hits);
-      if (hits.length < 1) {
-        alert('No Images found');
-        return;
-      } else {
-        this.setState({
-          imagesList: hits,
-          searchData,
+  async componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.searchData !== this.state.searchData ||
+      prevState.page !== this.state.page
+    ) {
+      try {
+        this.setState({ loading: true });
+        const { totalHits, hits } = await fetchImages(
+          this.state.searchData,
+          this.state.page
+        );
+
+        if (hits.length < 1) {
+          alert('No images found');
+          this.setState({ loading: false });
+          return;
+        }
+
+        this.setState(prevState => ({
+          imagesList:
+            prevState.page === 1 ? hits : [...prevState.imagesList, ...hits],
           totalHits,
-          page: 1,
-        });
+          loading: false,
+        }));
+      } catch (error) {
+        console.log(error.message);
       }
-    } catch (error) {
-      console.log(error.message);
     }
+  }
+
+  handleSubmit = searchData => {
+    this.setState({
+      searchData,
+      imagesList: [],
+      page: 1,
+    });
   };
 
-  handleNextPage = async () => {
-    try {
-      this.setState({ loading: true });
-      const { hits } = await fetchImages(
-        this.state.searchData,
-        this.state.page + 1
-      );
-      this.setState(prevState => ({
-        imagesList: [...prevState.imagesList, ...hits],
-        loading: false,
-        page: prevState.page + 1,
-      }));
-    } catch (error) {
-      console.log(error.message);
-    }
+  handleNextPage = () => {
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+    }));
   };
 
   render() {
@@ -58,10 +65,11 @@ export class App extends Component {
       <div className={css.app}>
         <Searchbar onSubmit={this.handleSubmit} />
 
-        <ImageGallery items={imagesList} />
-
         {loading && <Loader />}
-        {totalHits > 12 && totalHits > imagesList.length && (
+
+        {imagesList.length > 0 && <ImageGallery items={imagesList} />}
+
+        {totalHits > 12 && totalHits > imagesList.length && !loading && (
           <Button onClick={this.handleNextPage} />
         )}
       </div>
